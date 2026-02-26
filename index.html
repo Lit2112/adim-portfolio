@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyberpunk Effects Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00f5ff;
+    --purple: #bf00ff;
+    --pink: #ff006e;
+    --dark: #020008;
+    --dark2: #0a0015;
+    --card-bg: rgba(0, 245, 255, 0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: #e0e0e0;
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* LIGHTNING TRAIL CURSOR */
+  #lightning-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* PARTICLE CANVAS */
+  #particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* SCANLINES */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 998;
+  }
+
+  /* LAYOUT */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* SECTION LABELS */
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--cyan);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 0;
+    position: relative;
+  }
+
+  .hero-tag {
+    font-size: 0.75rem;
+    color: var(--cyan);
+    letter-spacing: 6px;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .hero h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  /* GLITCH EFFECT */
+  .glitch {
+    position: relative;
+    display: inline-block;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(0,245,255,0.5);
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .glitch::before {
+    color: var(--pink);
+    animation: glitch1 3s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  }
+  .glitch::after {
+    color: var(--cyan);
+    animation: glitch2 3s infinite;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  }
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: translate(0); opacity: 0; }
+    92% { transform: translate(-4px, 2px); opacity: 0.8; }
+    94% { transform: translate(4px, -2px); opacity: 0.8; }
+    96% { transform: translate(-2px, 0); opacity: 0.8; }
+    98% { transform: translate(0); opacity: 0; }
+  }
+  @keyframes glitch2 {
+    0%, 90%, 100% { transform: translate(0); opacity: 0; }
+    93% { transform: translate(4px, 2px); opacity: 0.8; }
+    95% { transform: translate(-4px, -2px); opacity: 0.8; }
+    97% { transform: translate(2px, 0); opacity: 0.8; }
+    99% { transform: translate(0); opacity: 0; }
+  }
+
+  /* TYPEWRITER */
+  .typewriter-wrapper {
+    font-size: 1.1rem;
+    color: var(--cyan);
+    margin-bottom: 2.5rem;
+    min-height: 2rem;
+  }
+  .typewriter { border-right: 2px solid var(--cyan); padding-right: 4px; }
+  @keyframes blink { 0%,100%{border-color:var(--cyan)} 50%{border-color:transparent} }
+
+  .hero-cta {
+    display: inline-block;
+    padding: 0.9rem 2.5rem;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-decoration: none;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.3s;
+    cursor: none;
+  }
+  .hero-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: var(--cyan);
+    transition: left 0.3s ease;
+    z-index: -1;
+  }
+  .hero-cta:hover::before { left: 0; }
+  .hero-cta:hover { color: var(--dark); }
+
+  /* ─── EFFECTS SHOWCASE ─── */
+  .section { padding: 5rem 0; }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    position: relative;
+    display: inline-block;
+  }
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px; left: 0;
+    width: 60%; height: 2px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* GLASS CARDS */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .glass-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 2rem;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    transform-style: preserve-3d;
+    cursor: none;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.06), transparent);
+    transition: left 0.5s ease;
+  }
+  .glass-card:hover::before { left: 150%; }
+  .glass-card:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.15), 0 0 60px rgba(0,245,255,0.05), inset 0 0 20px rgba(0,245,255,0.03);
+    transform: translateY(-4px);
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    color: var(--cyan);
+    margin-bottom: 0.75rem;
+    letter-spacing: 1px;
+  }
+  .card-desc {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+  }
+  .card-tag {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgba(191,0,255,0.4);
+    color: var(--purple);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    border-radius: 2px;
+  }
+
+  /* ─── NEON GLOW BUTTONS ─── */
+  .buttons-section { padding: 4rem 0; }
+  .buttons-row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; margin-top: 2rem; }
+
+  .neon-btn {
+    padding: 0.85rem 2rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    cursor: none;
+    position: relative;
+    transition: all 0.3s ease;
+    background: transparent;
+  }
+  .neon-btn-cyan {
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 10px rgba(0,245,255,0.3), inset 0 0 10px rgba(0,245,255,0.05);
+  }
+  .neon-btn-cyan:hover {
+    background: var(--cyan);
+    color: var(--dark);
+    box-shadow: 0 0 30px rgba(0,245,255,0.6), 0 0 60px rgba(0,245,255,0.3);
+  }
+  .neon-btn-pink {
+    color: var(--pink);
+    border: 1px solid var(--pink);
+    box-shadow: 0 0 10px rgba(255,0,110,0.3), inset 0 0 10px rgba(255,0,110,0.05);
+  }
+  .neon-btn-pink:hover {
+    background: var(--pink);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(255,0,110,0.6), 0 0 60px rgba(255,0,110,0.3);
+  }
+  .neon-btn-purple {
+    color: var(--purple);
+    border: 1px solid var(--purple);
+    box-shadow: 0 0 10px rgba(191,0,255,0.3), inset 0 0 10px rgba(191,0,255,0.05);
+  }
+  .neon-btn-purple:hover {
+    background: var(--purple);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(191,0,255,0.6), 0 0 60px rgba(191,0,255,0.3);
+  }
+
+  /* ─── TABS ─── */
+  .tab-buttons { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-bottom: 2.5rem; margin-top: 2rem; }
+
+  .tab-btn {
+    padding: 0.85rem 2rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+  }
+  .neon-btn-cyan { color: var(--cyan); border: 1px solid var(--cyan); box-shadow: 0 0 10px rgba(0,245,255,0.3), inset 0 0 10px rgba(0,245,255,0.05); }
+  .neon-btn-cyan:hover, .neon-btn-cyan.active { background: var(--cyan); color: var(--dark); box-shadow: 0 0 30px rgba(0,245,255,0.6), 0 0 60px rgba(0,245,255,0.3); }
+  .neon-btn-pink { color: var(--pink); border: 1px solid var(--pink); box-shadow: 0 0 10px rgba(255,0,110,0.3), inset 0 0 10px rgba(255,0,110,0.05); }
+  .neon-btn-pink:hover, .neon-btn-pink.active { background: var(--pink); color: #fff; box-shadow: 0 0 30px rgba(255,0,110,0.6), 0 0 60px rgba(255,0,110,0.3); }
+  .neon-btn-purple { color: var(--purple); border: 1px solid var(--purple); box-shadow: 0 0 10px rgba(191,0,255,0.3), inset 0 0 10px rgba(191,0,255,0.05); }
+  .neon-btn-purple:hover, .neon-btn-purple.active { background: var(--purple); color: #fff; box-shadow: 0 0 30px rgba(191,0,255,0.6), 0 0 60px rgba(191,0,255,0.3); }
+
+  .tab-content { animation: fadeInTab 0.4s ease; }
+  .tab-content.hidden { display: none; }
+  @keyframes fadeInTab { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 1.5rem; margin-top: 0.5rem; }
+  .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, var(--cyan), var(--purple), transparent); opacity: 0.3; }
+
+  .timeline-item { position: relative; margin-bottom: 2.5rem; }
+  .timeline-dot { position: absolute; left: -1.85rem; top: 0.4rem; width: 10px; height: 10px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan); flex-shrink: 0; }
+
+  .timeline-role { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #fff; margin-bottom: 0.3rem; }
+  .timeline-company { font-size: 0.8rem; color: var(--cyan); margin-bottom: 0.2rem; opacity: 0.85; }
+  .timeline-date { font-size: 0.72rem; color: rgba(255,255,255,0.35); letter-spacing: 2px; margin-bottom: 0.6rem; }
+  .timeline-desc { font-size: 0.82rem; color: rgba(255,255,255,0.55); line-height: 1.7; }
+
+  /* ─── SKILLS BAR ─── */
+  .skill-row { margin-bottom: 1.5rem; }
+  .skill-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem; }
+  .skill-name { color: rgba(255,255,255,0.8); }
+  .skill-pct { color: var(--cyan); }
+  .skill-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 0; overflow: visible; position: relative; }
+  .skill-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); box-shadow: 0 0 12px var(--cyan); border-radius: 0; width: 0%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); position: relative; }
+  .skill-fill::after { content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 15px var(--cyan), 0 0 30px var(--cyan); }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ─── AURORA BG ACCENT ─── */
+  .aurora { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.12; }
+  .aurora-1 { background: var(--purple); top: -200px; right: -200px; }
+  .aurora-2 { background: var(--cyan); bottom: -200px; left: -200px; }
+
+  /* ─── FOOTER ─── */
+  footer { position: relative; z-index: 1; border-top: 1px solid rgba(0,245,255,0.1); padding: 2rem 0; text-align: center; font-size: 0.75rem; color: rgba(255,255,255,0.25); letter-spacing: 3px; }
+</style>
+</head>
+<body>
+
+<canvas id="lightning-canvas"></canvas>
+<canvas id="particles"></canvas>
+<div class="aurora aurora-1"></div>
+<div class="aurora aurora-2"></div>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-tag">&gt; INITIALIZING PORTFOLIO_v2.0 ...</p>
+    <h1>
+      <span class="glitch" data-text="ADIM ABASS">ADIM ABASS</span>
+    </h1>
+    <div class="typewriter-wrapper">
+      <span class="typewriter" id="typewriter"></span>
+    </div>
+
+  </section>
+
+  <!-- GLASS CARDS -->
+  <section class="section reveal">
+    <p class="section-label">&gt; 01 // FEATURED WORK</p>
+    <h2 class="section-title">Projects</h2>
+    <div class="cards-grid">
+      <div class="glass-card" id="card1">
+        <span class="card-icon">✈️</span>
+        <div class="card-title">Smart Fare Alert</div>
+        <div class="card-desc">A production-grade flight monitoring API built with FastAPI, Celery, and Playwright. Scrapes real-time Google Flights data, evaluates prices against user-defined thresholds, and delivers instant email alerts.</div>
+        <span class="card-tag">PYTHON · DOCKER · MESSAGE QUEUES</span>
+      </div>
+      <div class="glass-card" id="card2">
+        <span class="card-icon">🧠</span>
+        <div class="card-title">Virtual Reality Therapeutic Game Overcome</div>
+        <div class="card-desc">A virtual reality rehabilitation game built with Unity. Combines immersive treadmill-based gameplay with targeted motor and cognitive exercises to support Parkinson's disease patients.</div>
+        <span class="card-tag">C# · UNITY · VR</span>
+      </div>
+      <div class="glass-card" id="card3">
+        <span class="card-icon">🛰️</span>
+        <div class="card-title">Terrain Feature Detection</div>
+        <div class="card-desc">A NASA JPL-funded research project implementing SLAM algorithms to detect and map geological features — caves, cliffs, and valleys — using autonomous localization and mapping techniques.</div>
+        <span class="card-tag">COMPUTER VISION · ROBOTICS</span>
+      </div>
+      <div class="glass-card" id="card4">
+        <span class="card-icon">🏎️</span>
+        <div class="card-title">Race!</div>
+        <div class="card-desc">A self-driving toy race car built for an innovation competition. Combines custom hardware and software to deliver autonomous navigation and real-time decision making on a miniature scale.</div>
+        <span class="card-tag">PYTHON · RASPBERRY PI</span>
+      </div>
+      <div class="glass-card" id="card5">
+        <span class="card-icon">📍</span>
+        <div class="card-title">Eventally</div>
+        <div class="card-desc">An event discovery platform built for Android. Aggregates nearby events in real-time and delivers a social experience through integrated chat and image sharing.</div>
+        <span class="card-tag">ANDROID · GEOLOCATION</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABBED SECTION -->
+  <section class="section reveal" id="tabs-section">
+    <p class="section-label">&gt; 02 // BACKGROUND</p>
+    <h2 class="section-title">About Me</h2>
+
+    <!-- TAB BUTTONS -->
+    <div class="tab-buttons">
+      <button class="neon-btn neon-btn-cyan tab-btn active" onclick="switchTab('experience', this)">Experience</button>
+      <button class="neon-btn neon-btn-pink tab-btn" onclick="switchTab('education', this)">Education</button>
+      <button class="neon-btn neon-btn-purple tab-btn" onclick="switchTab('techstack', this)">Tech Stack</button>
+    </div>
+
+    <!-- EXPERIENCE TAB -->
+    <div class="tab-content" id="tab-experience">
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">Full Stack Engineer</div>
+            <div class="timeline-company">Enerfault &nbsp;·&nbsp; Dublin, Ireland</div>
+            <div class="timeline-date">Nov 2025 — Present</div>
+            <div class="timeline-desc">
+              Built a real-time monitoring dashboard that continuously reads live sensor data, validates readings against regulatory thresholds, and triggers instant alerts for out-of-range values — ensuring compliance for critical building systems such as water temperature legionella regulations.<br><br>
+              Engineered an automated reporting engine delivering daily, weekly, and monthly performance summaries to facility managers, enabling proactive maintenance and full regulatory compliance across all monitored sites.
+            </div>
+            <span class="card-tag">FASTAPI · AZURE · REFLEX · POWER BI</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">Software Engineer</div>
+            <div class="timeline-company">Grand Forum Insurance Agency LTD &nbsp;·&nbsp; Nazareth, Israel</div>
+            <div class="timeline-date">Apr 2023 — Dec 2024</div>
+            <div class="timeline-desc">
+              Developed C# automation tools on Windows that eliminated manual errors in daily reporting workflows, directly improving operational efficiency for insurance agents.<br><br>
+              Grew the company's customer base by 500+ by engineering systems that streamlined internal operations, freeing C-level executives to focus entirely on client acquisition.
+            </div>
+            <span class="card-tag">C# · WINFORMS · AUTOMATION</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">Software Engineer</div>
+            <div class="timeline-company">Microsoft &nbsp;·&nbsp; Herzliya, Israel</div>
+            <div class="timeline-date">Jun 2020 — Apr 2023</div>
+            <div class="timeline-desc">
+              Built a one-click region rollout tool using ARM Templates and EV2, enabling rapid and reliable expansion of Microsoft's cloud infrastructure to new markets.<br><br>
+              Engineered critical Control Plane Service features including Azure Managed Identity integration, runtime service configuration, and resource key deprecation — improving service availability, security, and engineer productivity.<br><br>
+              Led migration of the Log Analytics Control Plane service to Kubernetes, managing flow migrations, feature deprecations, and new feature development while maintaining full support for existing regions.<br><br>
+              Served as DRI (Designated Response Individual) for the Log Analytics Control Plane team — acting as the primary escalation point across Microsoft for customer-facing issues and cross-team coordination.
+            </div>
+            <span class="card-tag">TYPESCRIPT · C# · AZURE · KUBERNETES</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">Teaching Assistant</div>
+            <div class="timeline-company">Northeastern University &nbsp;·&nbsp; Boston, MA</div>
+            <div class="timeline-date">Jan 2018 — Apr 2018</div>
+            <div class="timeline-desc">
+              Assisted with grading, tutoring, and delivery of course materials for the graduate Algorithms course (Spring '18 semester).
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">Software Engineer</div>
+            <div class="timeline-company">Mellanox Technologies &nbsp;·&nbsp; Yokneam, Israel</div>
+            <div class="timeline-date">Aug 2014 — Aug 2017</div>
+            <div class="timeline-desc">
+              Designed and delivered cross-platform automation tools and GUI-based software solutions using Python across Linux and Windows, serving multiple engineering departments including Mechanics, Layout, Board Design, and Signal Integrity — significantly reducing manual workload across teams.<br><br>
+              Played a key role in pre tape-out product validation, directly contributing to revenue gains of thousands of dollars per quarter by catching critical issues before manufacturing.
+            </div>
+            <span class="card-tag">PYTHON · AUTOMATION</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDUCATION TAB -->
+    <div class="tab-content hidden" id="tab-education">
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">MSc Computer Science</div>
+            <div class="timeline-company">University of Southern California &nbsp;·&nbsp; Los Angeles, CA</div>
+            <div class="timeline-date">Aug 2018 — Dec 2019</div>
+            <div class="timeline-desc">🏆 Fulbright Scholarship &nbsp;·&nbsp; GPA: 3.95/4.0<br><br>Courses: Foundations of Artificial Intelligence, Machine Learning, Introduction to Robotics, Web Technologies, Augmented / Virtual / Mixed Reality, Software Management and Economics.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">MSc Computer Science</div>
+            <div class="timeline-company">Northeastern University &nbsp;·&nbsp; Boston, MA</div>
+            <div class="timeline-date">Sep 2017 — Apr 2018</div>
+            <div class="timeline-desc">🏆 Fulbright Scholarship &nbsp;·&nbsp; GPA: 3.91/4.0 &nbsp;·&nbsp; Transferred to USC after first year.<br><br>Courses: Programming Design Paradigm, Algorithms, Game Artificial Intelligence, Software Vulnerabilities and Security.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="timeline-role">BSc Computer Science</div>
+            <div class="timeline-company">Technion – Israel Institute of Technology &nbsp;·&nbsp; Haifa, Israel</div>
+            <div class="timeline-date">Oct 2011 — Jun 2016</div>
+            <div class="timeline-desc">🏆 Dean's List<br><br>Courses: Algorithms, Data Structures, Operating Systems, Programming Languages, Object Oriented Programming, Logic Design, Digital Computers Structure.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECH STACK TAB -->
+    <div class="tab-content hidden" id="tab-techstack">
+      <div style="margin-top: 2rem; max-width: 600px;">
+        <div class="skill-row">
+          <div class="skill-header"><span class="skill-name">Python</span><span class="skill-pct">92%</span></div>
+          <div class="skill-track"><div class="skill-fill" data-width="92"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-header"><span class="skill-name">C#</span><span class="skill-pct">89%</span></div>
+          <div class="skill-track"><div class="skill-fill" data-width="89"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-header"><span class="skill-name">Azure</span><span class="skill-pct">82%</span></div>
+          <div class="skill-track"><div class="skill-fill" data-width="82"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-header"><span class="skill-name">TypeScript</span><span class="skill-pct">77%</span></div>
+          <div class="skill-track"><div class="skill-fill" data-width="77"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  &gt; SYSTEM ONLINE // ALL MODULES LOADED // 2026
+</footer>
+
+<script>
+// LIGHTNING TRAIL CURSOR
+const lc = document.getElementById('lightning-canvas');
+const lctx = lc.getContext('2d');
+lc.width = window.innerWidth;
+lc.height = window.innerHeight;
+window.addEventListener('resize', () => { lc.width = window.innerWidth; lc.height = window.innerHeight; });
+
+let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+const trail = [];
+const MAX_TRAIL = 28;
+const sparks = [];
+
+function addSpark(x, y) {
+  const count = Math.random() < 0.3 ? 2 : 0;
+  for (let i = 0; i < count; i++) {
+    sparks.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 3,
+      vy: (Math.random() - 0.5) * 3 - 1,
+      life: 1,
+      decay: 0.06 + Math.random() * 0.06,
+      size: Math.random() * 2 + 1,
+      color: Math.random() > 0.5 ? '0,245,255' : '191,0,255'
+    });
+  }
+}
+
+function drawLightning(x1, y1, x2, y2, roughness, depth) {
+  if (depth === 0) {
+    lctx.beginPath();
+    lctx.moveTo(x1, y1);
+    lctx.lineTo(x2, y2);
+    return;
+  }
+  const mx = (x1 + x2) / 2 + (Math.random() - 0.5) * roughness;
+  const my = (y1 + y2) / 2 + (Math.random() - 0.5) * roughness;
+  drawLightning(x1, y1, mx, my, roughness / 2, depth - 1);
+  lctx.stroke();
+  drawLightning(mx, my, x2, y2, roughness / 2, depth - 1);
+  lctx.stroke();
+  if (depth === 2 && Math.random() < 0.3) {
+    const bx = mx + (Math.random() - 0.5) * 30;
+    const by = my + (Math.random() - 0.5) * 30;
+    lctx.beginPath();
+    lctx.moveTo(mx, my);
+    lctx.lineTo(bx, by);
+    lctx.globalAlpha = 0.3;
+    lctx.stroke();
+    lctx.globalAlpha = 1;
+  }
+}
+
+let lastLightningX = mouseX, lastLightningY = mouseY;
+let lightningTimer = 0;
+
+function animateLightning() {
+  lctx.clearRect(0, 0, lc.width, lc.height);
+  trail.push({ x: mouseX, y: mouseY });
+  if (trail.length > MAX_TRAIL) trail.shift();
+  if (trail.length > 2) {
+    for (let i = 1; i < trail.length; i++) {
+      const t = i / trail.length;
+      lctx.beginPath();
+      lctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+      lctx.lineTo(trail[i].x, trail[i].y);
+      lctx.strokeStyle = `rgba(0,245,255,${t * 0.7})`;
+      lctx.lineWidth = t * 3;
+      lctx.shadowColor = '#00f5ff';
+      lctx.shadowBlur = 8 * t;
+      lctx.stroke();
+    }
+  }
+  lightningTimer++;
+  const dist = Math.hypot(mouseX - lastLightningX, mouseY - lastLightningY);
+  if (lightningTimer > 3 && dist > 12 && trail.length > 8) {
+    lightningTimer = 0;
+    const origin = trail[Math.max(0, trail.length - 10)];
+    lctx.shadowColor = '#00f5ff'; lctx.shadowBlur = 18;
+    lctx.strokeStyle = 'rgba(0,245,255,0.25)'; lctx.lineWidth = 3;
+    drawLightning(origin.x, origin.y, mouseX, mouseY, 18, 3);
+    lctx.shadowColor = '#ffffff'; lctx.shadowBlur = 6;
+    lctx.strokeStyle = 'rgba(200,255,255,0.9)'; lctx.lineWidth = 1;
+    drawLightning(origin.x, origin.y, mouseX, mouseY, 10, 3);
+    lctx.shadowBlur = 0;
+    addSpark(mouseX, mouseY);
+    lastLightningX = mouseX; lastLightningY = mouseY;
+  }
+  sparks.forEach((s, idx) => {
+    s.x += s.vx; s.y += s.vy; s.vy += 0.08; s.life -= s.decay;
+    if (s.life <= 0) { sparks.splice(idx, 1); return; }
+    lctx.beginPath();
+    lctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+    lctx.fillStyle = `rgba(${s.color},${s.life})`;
+    lctx.shadowColor = `rgba(${s.color},1)`; lctx.shadowBlur = 8;
+    lctx.fill(); lctx.shadowBlur = 0;
+  });
+  lctx.beginPath();
+  lctx.arc(mouseX, mouseY, 4, 0, Math.PI * 2);
+  lctx.fillStyle = '#ffffff';
+  lctx.shadowColor = '#00f5ff'; lctx.shadowBlur = 20;
+  lctx.fill(); lctx.shadowBlur = 0;
+  requestAnimationFrame(animateLightning);
+}
+animateLightning();
+
+// PARTICLES
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+const dots = Array.from({length: 80}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  vx: (Math.random() - 0.5) * 0.4,
+  vy: (Math.random() - 0.5) * 0.4,
+  r: Math.random() * 1.5 + 0.5
+}));
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  dots.forEach(d => {
+    d.x += d.vx; d.y += d.vy;
+    if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+    if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,245,255,0.5)';
+    ctx.fill();
+  });
+  dots.forEach((a, i) => {
+    dots.slice(i+1).forEach(b => {
+      const dist = Math.hypot(a.x-b.x, a.y-b.y);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `rgba(0,245,255,${0.15 * (1 - dist/120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    });
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// TYPEWRITER
+const phrases = ['Full Stack Engineer.', 'USC Graduate.', 'Fulbright Scholar.'];
+let pi = 0, ci = 0, deleting = false;
+const tw = document.getElementById('typewriter');
+function type() {
+  const phrase = phrases[pi];
+  if (!deleting) {
+    tw.textContent = phrase.slice(0, ++ci);
+    tw.style.animation = 'blink 0.7s step-end infinite';
+    if (ci === phrase.length) { deleting = true; setTimeout(type, 1800); return; }
+  } else {
+    tw.textContent = phrase.slice(0, --ci);
+    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+  }
+  setTimeout(type, deleting ? 40 : 80);
+}
+type();
+
+// 3D TILT ON CARDS
+document.querySelectorAll('.glass-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = e.clientX - r.left - r.width/2;
+    const y = e.clientY - r.top - r.height/2;
+    card.style.transform = `perspective(600px) rotateY(${x/20}deg) rotateX(${-y/20}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+// SCROLL REVEAL
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+reveals.forEach(r => observer.observe(r));
+
+// TAB SWITCHING
+function switchTab(tab, btn) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  // Remove active from all buttons
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  // Show selected tab
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  btn.classList.add('active');
+  // Animate skill bars when tech stack tab is opened
+  if (tab === 'techstack') {
+    setTimeout(() => {
+      document.querySelectorAll('.skill-fill').forEach(fill => {
+        fill.style.width = fill.dataset.width + '%';
+      });
+    }, 50);
+  }
+}
+</script>
+</body>
+</html>
